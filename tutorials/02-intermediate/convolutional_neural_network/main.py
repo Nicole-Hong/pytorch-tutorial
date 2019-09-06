@@ -2,16 +2,28 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
-
+import wandb
 
 # Device configuration
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # Hyper parameters
+run_name = "convnet test sweep"
 num_epochs = 5
 num_classes = 10
 batch_size = 100
 learning_rate = 0.001
+#l1_size = 16
+#l2_size = 32
+
+wandb.init(name=run_name, project="pytorch_tutorial")
+#wandb.config.update({
+#  "num_epochs" : num_epochs,
+#  "batch_size" : batch_size,
+#  "lr" : learning_rate,
+#  "l1" : l1_size,
+#  "l2" : l2_size
+#})
 
 # MNIST dataset
 train_dataset = torchvision.datasets.MNIST(root='../../data/',
@@ -37,16 +49,16 @@ class ConvNet(nn.Module):
     def __init__(self, num_classes=10):
         super(ConvNet, self).__init__()
         self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 16, kernel_size=5, stride=1, padding=2),
-            nn.BatchNorm2d(16),
+            nn.Conv2d(1, wandb.config.l1_size, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm2d(wandb.config.l1_size),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
         self.layer2 = nn.Sequential(
-            nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2),
-            nn.BatchNorm2d(32),
+            nn.Conv2d(wandb.config.l1_size, wandb.config.l2_size, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm2d(wandb.config.l2_size),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
-        self.fc = nn.Linear(7*7*32, num_classes)
+        self.fc = nn.Linear(7*7*wandb.config.l2_size, num_classes)
         
     def forward(self, x):
         out = self.layer1(x)
@@ -56,6 +68,7 @@ class ConvNet(nn.Module):
         return out
 
 model = ConvNet(num_classes).to(device)
+wandb.watch(model, log="all")
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
@@ -76,7 +89,7 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
+        wandb.log({"loss" : loss}) 
         if (i+1) % 100 == 0:
             print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
                    .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
@@ -93,7 +106,9 @@ with torch.no_grad():
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
-
+	  
+    acc = 100 * correct / total
+    wandb.log({"acc" : acc})
     print('Test Accuracy of the model on the 10000 test images: {} %'.format(100 * correct / total))
 
 # Save the model checkpoint

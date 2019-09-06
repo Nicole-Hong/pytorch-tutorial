@@ -2,18 +2,28 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
-
+import wandb
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Hyper-parameters 
+
+# Hyper-parameters
+run_name = "b64 acc" 
 input_size = 784
 hidden_size = 500
 num_classes = 10
-num_epochs = 5
-batch_size = 100
-learning_rate = 0.001
+num_epochs = 10
+batch_size = 64
+learning_rate = 0.0025
+
+wandb.init(name=run_name, project="pytorch_tutorial")
+wandb.config.update({
+  "hidden_size" : hidden_size,
+  "num_epochs" : num_epochs,
+  "batch_size" : batch_size,
+  "learning_rate" : learning_rate
+})
 
 # MNIST dataset 
 train_dataset = torchvision.datasets.MNIST(root='../../data', 
@@ -49,6 +59,7 @@ class NeuralNet(nn.Module):
         return out
 
 model = NeuralNet(input_size, hidden_size, num_classes).to(device)
+wandb.watch(model,log="all")
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
@@ -70,8 +81,9 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
+        wandb.log({"loss" : loss})
         if (i+1) % 100 == 0:
+       #     wandb.log({"loss" : loss})
             print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
                    .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
 
@@ -87,8 +99,9 @@ with torch.no_grad():
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
-
-    print('Accuracy of the network on the 10000 test images: {} %'.format(100 * correct / total))
+    acc = 100 * correct / total
+    wandb.log({"acc" : acc})
+    print('Accuracy of the network on the 10000 test images: {} %'.format(acc))
 
 # Save the model checkpoint
 torch.save(model.state_dict(), 'model.ckpt')

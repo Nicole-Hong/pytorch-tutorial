@@ -1,0 +1,11 @@
+description: explore different params for a basic convnet
+program: main.py
+method: random # can be grid, bayes
+metric:
+  name: loss
+  goal: minimize
+parameters:
+  l1_size:
+    values: [16, 32, 64, 128]
+  l2_size:
+    values: [16, 32, 64, 128]
