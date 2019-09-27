@@ -59,7 +59,7 @@ class NeuralNet(nn.Module):
         return out
 
 model = NeuralNet(input_size, hidden_size, num_classes).to(device)
-wandb.watch(model,log="all")
+wandb.watch(model, log="all")
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
