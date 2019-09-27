@@ -1,3 +1,4 @@
+import argparse
 import torch 
 import torch.nn as nn
 import torchvision
@@ -7,14 +8,15 @@ import wandb
 # Device configuration
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-# Hyper parameters
-run_name = "convnet test sweep"
-num_epochs = 5
-num_classes = 10
-batch_size = 100
-learning_rate = 0.001
-#l1_size = 16
-#l2_size = 32
+# Settings / hyperparameters
+# these defaults can be edited here or overwritten via command line
+MODEL_NAME = ""
+EPOCHS = 5
+NUM_CLASSES = 10
+BATCH_SIZE = 100
+LEARNING_RATE = 0.001
+L1_SIZE = 16
+L2_SIZE = 32
 
 wandb.init(name=run_name, project="pytorch_tutorial")
 #wandb.config.update({
@@ -68,6 +70,7 @@ class ConvNet(nn.Module):
         return out
 
 model = ConvNet(num_classes).to(device)
+model.cuda()
 wandb.watch(model, log="all")
 
 # Loss and optimizer
@@ -113,3 +116,30 @@ with torch.no_grad():
 
 # Save the model checkpoint
 torch.save(model.state_dict(), 'model.ckpt')
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument(
+    "-m",
+    "--model_name",
+    type=str,
+    default=MODEL_NAME,
+    help="Name of this model/run (model will be saved to this file)")
+  parser.add_argument(
+    "-e",
+    "--epochs",
+    type=int,
+    default=EPOCHS,
+    help="Number of training epochs")
+  parser.add_argument(
+    "--l1_size",
+    type=int,
+    default=L1_SIZE,
+    help="size of first conv layer")
+  parser.add_argument(
+    "--l2_size",
+    type=int,
+    default=L2_SIZE,
+    help="size of second conv layer")
+  args = parser.parse_args()
+  train(args)

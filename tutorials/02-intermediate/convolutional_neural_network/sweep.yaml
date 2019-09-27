@@ -1,6 +1,6 @@
 description: explore different params for a basic convnet
 program: main.py
-method: random # can be grid, bayes
+method: bayes # can be grid, bayes
 metric:
   name: loss
   goal: minimize
