@@ -2,20 +2,35 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
-
+import wandb
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Hyper-parameters
+run_name = "rnn example"
 sequence_length = 28
 input_size = 28
 hidden_size = 128
 num_layers = 2
 num_classes = 10
 batch_size = 100
-num_epochs = 2
+num_epochs = 5
 learning_rate = 0.01
+
+# a faster way to log hyperparameters and settings to wandb
+# note that this does not enable convenient overrides from the commandline via argparse
+wandb.init(name=run_name, project="pytorch_intro")
+wandb.config.update({
+  "seq_len" : sequence_length,
+  "input_size" : input_size,
+  "hidden_size" : hidden_size,
+  "num_layers" : num_layers,
+  "num_classes" : num_classes,
+  "batch_size" : batch_size,
+  "epochs" : num_epochs,
+  "learning_rate" : learning_rate
+}) 
 
 # MNIST dataset
 train_dataset = torchvision.datasets.MNIST(root='../../data/',
@@ -79,24 +94,26 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
         if (i+1) % 100 == 0:
+            # log loss to wandb
+            wandb.log({"loss" : loss}) 
             print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
                    .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
 
-# Test the model
-with torch.no_grad():
-    correct = 0
-    total = 0
-    for images, labels in test_loader:
-        images = images.reshape(-1, sequence_length, input_size).to(device)
-        labels = labels.to(device)
-        outputs = model(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
-
-    print('Test Accuracy of the model on the 10000 test images: {} %'.format(100 * correct / total)) 
+    # Test the model
+    with torch.no_grad():
+        correct = 0
+        total = 0
+        for images, labels in test_loader:
+            images = images.reshape(-1, sequence_length, input_size).to(device)
+            labels = labels.to(device)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+        acc = 100 * correct / total
+        wandb.log({"epoch" : epoch, "acc" : acc})
+        print('Test Accuracy of the model on the 10000 test images: {} %'.format(acc))
 
 # Save the model checkpoint
 torch.save(model.state_dict(), 'model.ckpt')

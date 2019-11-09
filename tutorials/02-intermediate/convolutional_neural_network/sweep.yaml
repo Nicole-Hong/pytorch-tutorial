@@ -1,3 +1,4 @@
+name: general first sweep
 description: explore different params for a basic convnet
 program: main.py
 method: bayes # can be grid, bayes
@@ -5,7 +6,16 @@ metric:
   name: loss
   goal: minimize
 parameters:
+  batch_size:
+    values: [16, 32, 64, 100, 256]
+  epochs:
+    value: 10
   l1_size:
     values: [16, 32, 64, 128]
   l2_size:
     values: [16, 32, 64, 128]
+  learning_rate:
+    min: 0.0001
+    max: 0.01
+  conv_kernel_size:
+    value: 5
