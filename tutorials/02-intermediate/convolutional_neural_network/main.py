@@ -10,13 +10,14 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # Settings / hyperparameters
 # these defaults can be edited here, via command line, or in the sweeps yaml
-MODEL_NAME = "cnn example"
-EPOCHS = 5
+MODEL_NAME ="cnn example"
+EPOCHS = 10
 NUM_CLASSES = 10
-BATCH_SIZE = 100
+BATCH_SIZE = 32
 LEARNING_RATE = 0.001
-L1_SIZE = 16
-L2_SIZE = 32
+L1_SIZE = 32
+L2_SIZE = 128
+# note that changing this may require changing the shape of adjacent layers
 CONV_KERNEL_SIZE = 5
 
 # Convolutional neural network (two convolutional layers)
@@ -36,6 +37,8 @@ class ConvNet(nn.Module):
         self.fc = nn.Linear(7*7*args.l2_size, num_classes)
         
     def forward(self, x):
+        # uncomment to see the shape of a given layer:
+        #print("x: ", x.size())
         out = self.layer1(x)
         out = self.layer2(out)
         out = out.reshape(out.size(0), -1)
@@ -95,7 +98,7 @@ def train(args):
             loss.backward()
             optimizer.step()
             # log loss to wandb
-            wandb.log({"loss" : loss}) 
+            wandb.log({"loss" : loss})
             if (i+1) % 100 == 0:
                 print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
                    .format(epoch+1, args.epochs, i+1, total_step, loss.item()))
@@ -115,6 +118,7 @@ def train(args):
                 correct += (predicted == labels).sum().item()
 	  
             acc = 100 * correct / total
+            # log acc to wandb (and epoch so you can sync up model performance across batch sizes)
             wandb.log({"epoch" : epoch, "acc" : acc})
             print('Test Accuracy of the model on the 10000 test images: {} %'.format(100 * correct / total))
 
@@ -162,7 +166,7 @@ if __name__ == "__main__":
     "--conv_kernel_size",
     type=int,
     default=CONV_KERNEL_SIZE,
-    help="kernel size for convolutional layers")
+    help="kernel size for convolutional layers (changes may require adjustment to adjacent layer shapes")
   
   args = parser.parse_args()
   train(args)
