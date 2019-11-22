@@ -7,16 +7,18 @@ import wandb
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Hyper-parameters
-run_name = "cnn hidden size 450" 
+# Hyperparameters
+run_name = "feedforward e 25" 
 input_size = 784
 hidden_size = 450
 num_classes = 10
-num_epochs = 10
+num_epochs = 25
 batch_size = 64
 learning_rate = 0.0025
 
+# create an experiment run (optionally with a specific name) in your project
 wandb.init(name=run_name, project="pytorch_intro")
+# save hyperparameters to wandb
 wandb.config.update({
   "hidden_size" : hidden_size,
   "num_epochs" : num_epochs,
@@ -86,9 +88,8 @@ for epoch in range(num_epochs):
         if (i+1) % 100 == 0:
             print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
                    .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
-
-	  # Test the model
-	  # In test phase, we don't need to compute gradients (for memory efficiency)
+    # Test the model
+    # In test phase, we don't need to compute gradients (for memory efficiency)
     # Log test accuracy after every training epoch
     with torch.no_grad():
         correct = 0
@@ -101,8 +102,8 @@ for epoch in range(num_epochs):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
         acc = 100 * correct / total
-        # log accuracy to wandb
-        wandb.log({"acc" : acc})
+        # log accuracy to wandb (and optionally epoch--to sync more easily across different batch sizes)
+        wandb.log({"acc" : acc, "epoch" : epoch})
         print('Accuracy of the network on the 10000 test images: {} %'.format(acc))
 
 # Save the model checkpoint
