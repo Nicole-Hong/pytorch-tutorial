@@ -18,7 +18,7 @@ batch_size = 64
 num_epochs = 5
 learning_rate = 0.0075
 
-config = {
+wb_config = {
   "seq_len" : sequence_length,
   "input_size" : input_size,
   "hidden_size" : hidden_size,
@@ -29,10 +29,9 @@ config = {
   "learning_rate" : learning_rate
 }
 
-
-# a faster way to log hyperparameters and settings to wandb
+# log hyperparameters and settings to wandb
 # note that this does not enable convenient overrides from the commandline via argparse
-wandb.init(name=run_name, project="pytorch_intro", config=config)
+wandb.init(name=run_name, project="pytorch_intro", config=wb_config)
 
 # MNIST dataset
 train_dataset = torchvision.datasets.MNIST(root='../../data/',
@@ -75,6 +74,7 @@ class RNN(nn.Module):
         return out
 
 model = RNN(input_size, hidden_size, num_layers, num_classes).to(device)
+# log model architecture and gradients to wandb
 wandb.watch(model, log="all")
 
 # Loss and optimizer
