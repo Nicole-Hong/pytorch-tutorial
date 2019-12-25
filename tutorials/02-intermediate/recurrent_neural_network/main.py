@@ -7,21 +7,18 @@ import wandb
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Hyper-parameters
-run_name = "rnn example"
+# Hyperparameters
+run_name = "rnn lr 0.0075 b 64 2 l h 64"
 sequence_length = 28
 input_size = 28
-hidden_size = 128
+hidden_size = 64
 num_layers = 2
 num_classes = 10
-batch_size = 100
+batch_size = 64
 num_epochs = 5
-learning_rate = 0.01
+learning_rate = 0.0075
 
-# a faster way to log hyperparameters and settings to wandb
-# note that this does not enable convenient overrides from the commandline via argparse
-wandb.init(name=run_name, project="pytorch_intro")
-wandb.config.update({
+config = {
   "seq_len" : sequence_length,
   "input_size" : input_size,
   "hidden_size" : hidden_size,
@@ -30,7 +27,12 @@ wandb.config.update({
   "batch_size" : batch_size,
   "epochs" : num_epochs,
   "learning_rate" : learning_rate
-}) 
+}
+
+
+# a faster way to log hyperparameters and settings to wandb
+# note that this does not enable convenient overrides from the commandline via argparse
+wandb.init(name=run_name, project="pytorch_intro", config=config)
 
 # MNIST dataset
 train_dataset = torchvision.datasets.MNIST(root='../../data/',
@@ -73,7 +75,7 @@ class RNN(nn.Module):
         return out
 
 model = RNN(input_size, hidden_size, num_layers, num_classes).to(device)
-
+wandb.watch(model, log="all")
 
 # Loss and optimizer
 criterion = nn.CrossEntropyLoss()
